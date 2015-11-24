@@ -25,6 +25,11 @@ class RecordSoundsViewController: UIViewController, AVAudioRecorderDelegate {
 	var recordImage: UIImage!
 	var resumeImage: UIImage!
 
+	let sequeStopRecording = "stopRecording"
+	let recordingInProgress = "Recording in Progress"
+	let tapToRecord = "Tap to Record"
+	let recordingPaused = "Recording Paused"
+
 	// MARK: VIEW LIFECYCLE
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -43,7 +48,7 @@ class RecordSoundsViewController: UIViewController, AVAudioRecorderDelegate {
 		isPausedAudio = false
 
 		recordButton.setImage(recordImage, forState: .Normal)
-		recordingLabel.text = "Tap to Record"
+		recordingLabel.text = tapToRecord
     }
 
     override func didReceiveMemoryWarning() {
@@ -80,7 +85,7 @@ class RecordSoundsViewController: UIViewController, AVAudioRecorderDelegate {
 	func startRecording() {
 		isRecordingAudio = true
 		recordButton.setImage(pauseImage, forState: .Normal)
-		recordingLabel.text = "Recording in progress"
+		recordingLabel.text = recordingInProgress
 
 		let dirPath = NSSearchPathForDirectoriesInDomains(.DocumentDirectory, .UserDomainMask, true)[0] as String
 
@@ -104,7 +109,7 @@ class RecordSoundsViewController: UIViewController, AVAudioRecorderDelegate {
 	func pauseRecording() {
 		isPausedAudio = true
 		recordButton.setImage(resumeImage, forState: .Normal)
-		recordingLabel.text = "Recording paused"
+		recordingLabel.text = recordingPaused
 
 		audioRecorder.pause()
 	}
@@ -112,7 +117,7 @@ class RecordSoundsViewController: UIViewController, AVAudioRecorderDelegate {
 	func resumeRecording() {
 		isPausedAudio = false
 		recordButton.setImage(pauseImage, forState: .Normal)
-		recordingLabel.text = "Recording in progress"
+		recordingLabel.text = recordingInProgress
 
 		audioRecorder.record()
 	}
@@ -121,14 +126,14 @@ class RecordSoundsViewController: UIViewController, AVAudioRecorderDelegate {
     func audioRecorderDidFinishRecording(recorder: AVAudioRecorder, successfully flag: Bool) {
         if(flag) {
             recordedAudio = RecordedAudio(name: recorder.url.lastPathComponent!, path: recorder.url)
-            self.performSegueWithIdentifier("stopRecording", sender: recordedAudio)
+            self.performSegueWithIdentifier(sequeStopRecording, sender: recordedAudio)
         } else {
             print("failed to record audio")
         }
     }
 
     override func prepareForSegue(segue: UIStoryboardSegue, sender: AnyObject?) {
-        if (segue.identifier == "stopRecording") {
+        if (segue.identifier == sequeStopRecording) {
             let playSoundsVC: PlaySoundsViewController = segue.destinationViewController as! PlaySoundsViewController
             let data = sender as! RecordedAudio
             playSoundsVC.receivedAudio = data
