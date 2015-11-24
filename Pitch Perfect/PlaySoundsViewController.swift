@@ -10,6 +10,8 @@ import UIKit
 import AVFoundation
 
 class PlaySoundsViewController: UIViewController {
+	@IBOutlet weak var stopButton: UIButton!
+
     var audioPlayer : AVAudioPlayer!
     var audioEngine : AVAudioEngine!
     var audioFile: AVAudioFile!
@@ -32,7 +34,8 @@ class PlaySoundsViewController: UIViewController {
 
         // Dispose of any resources that can be recreated.
     }
-    
+
+	// MARK: ACTIONS
     @IBAction func playSoundSlow(sender: UIButton) {
         playAudio(0.5)
     }
@@ -41,24 +44,83 @@ class PlaySoundsViewController: UIViewController {
         playAudio(1.5)
     }
 
+	@IBAction func playChipmunkAudio(sender: UIButton) {
+		playAudioWithVariablePitch(1000)
+	}
+
+	@IBAction func playDarthVaderAudio(sender: UIButton) {
+		playAudioWithVariablePitch(-1000)
+	}
+
+	@IBAction func playEchoAudio(sender: UIButton) {
+		resetAudio()
+
+		let audioPlayerNode = AVAudioPlayerNode()
+		audioEngine.attachNode(audioPlayerNode)
+
+		let delay = AVAudioUnitDelay()
+		delay.delayTime = 0.5
+		audioEngine.attachNode(delay)
+
+		audioEngine.connect(audioPlayerNode, to: delay, format: nil)
+		audioEngine.connect(delay, to: audioEngine.outputNode, format: nil)
+		try! audioEngine.start()
+
+		audioPlayerNode.scheduleFile(audioFile, atTime: nil, completionHandler: { () -> Void in
+			// hide the stop button when the audio completes playing (no reason to stop anymore...)
+			self.stopButton.hidden = true
+		})
+		audioPlayerNode.play()
+	}
+
+	@IBAction func playReverbAudio(sender: UIButton) {
+		resetAudio()
+
+		let audioPlayerNode = AVAudioPlayerNode()
+		audioEngine.attachNode(audioPlayerNode)
+
+		let reverbEffect = AVAudioUnitReverb()
+		reverbEffect.loadFactoryPreset(AVAudioUnitReverbPreset.Cathedral)
+		reverbEffect.wetDryMix = 50
+		audioEngine.attachNode(reverbEffect)
+
+		audioEngine.connect(audioPlayerNode, to: reverbEffect, format: nil)
+		audioEngine.connect(reverbEffect, to: audioEngine.outputNode, format: nil)
+		try! audioEngine.start()
+
+		audioPlayerNode.scheduleFile(audioFile, atTime: nil, completionHandler: { () -> Void in
+			// hide the stop button when the audio completes playing (no reason to stop anymore...)
+			self.stopButton.hidden = true
+		})
+		audioPlayerNode.play()
+	}
+
     @IBAction func stopPlaying(sender: UIButton) {
+		stopButton.hidden = true
+
         audioPlayer.stop()
     }
 
-    func playAudio(let speed :Float) {
-        audioEngine.stop()
-        audioEngine.reset()
+	// MARK: custom functions
+	func resetAudio() {
+		stopButton.hidden = false
 
-        audioPlayer.stop()
-        audioPlayer.rate = speed
-        audioPlayer.currentTime = 0.0
+		audioEngine.stop()
+		audioEngine.reset()
+
+		audioPlayer.stop()
+		audioPlayer.currentTime = 0.0
+	}
+
+    func playAudio(let speed :Float) {
+		resetAudio()
+
+		audioPlayer.rate = speed
         audioPlayer.play()
     }
 
     func playAudioWithVariablePitch(pitch: Float) {
-        audioPlayer.stop()
-        audioEngine.stop()
-        audioEngine.reset()
+		resetAudio()
 
         let audioPlayerNode = AVAudioPlayerNode()
         audioEngine.attachNode(audioPlayerNode)
@@ -69,19 +131,13 @@ class PlaySoundsViewController: UIViewController {
 
         audioEngine.connect(audioPlayerNode, to: changePitchEffect, format: nil)
         audioEngine.connect(changePitchEffect, to: audioEngine.outputNode, format: nil)
-
-        audioPlayerNode.scheduleFile(audioFile, atTime: nil, completionHandler: nil)
         try! audioEngine.start()
 
+		audioPlayerNode.scheduleFile(audioFile, atTime: nil, completionHandler: { () -> Void in
+			// hide the stop button when the audio completes playing (no reason to stop anymore...)
+			self.stopButton.hidden = true
+		})
         audioPlayerNode.play()
-    }
-
-    @IBAction func playChipmunkAudio(sender: UIButton) {
-        playAudioWithVariablePitch(1000)
-    }
-
-    @IBAction func playDarthVaderAudio(sender: UIButton) {
-        playAudioWithVariablePitch(-1000)
     }
 
     /*
@@ -93,5 +149,4 @@ class PlaySoundsViewController: UIViewController {
         // Pass the selected object to the new view controller.
     }
     */
-
 }
